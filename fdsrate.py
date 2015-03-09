@@ -14,7 +14,14 @@ def get_students(base_url):
     grads = gradcontainer.findAll('a', href=True)
     return grads
 
-
+def get_rating(current_student):
+    student_page = urllib2.urlopen(current_student['href'])
+    student_soup = BeautifulSoup(student_page.read())
+    info = student_soup.find('div', {'id':'contentSecond'})
+    # The b tag is associated with the information categories
+    info.findAll('b')
+    # Check for a picture
+    info.findAll('img')
 
 
 
