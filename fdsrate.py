@@ -4,6 +4,12 @@ from bs4 import BeautifulSoup
 from collections import Counter
 import urllib2
 
+base_url = 'http://fds.duke.edu/db/aas/Physics/grad'
+fds_url = 'http://fds.duke.edu/db'
+phy_url = 'http://www.phy.duke.edu/directory/grad'
+duke_site_url = 'http://sites.duke.edu/getting-started/'
+source_url = 'https://github.com/KEClaytor/fdsrate'
+
 
 # Scrape the main url for the students
 def get_students(base_url):
@@ -40,6 +46,12 @@ def get_rating(current_student):
         self_fields[key] = 1
     return self_fields
 
+def write_header(f):
+    f.write("This is an automated analysis of your Duke FDS entry.\n")
+    f.write("Please do not reply to this message. Contact the current GSO President if you have any concerns.\n")
+    f.write("You may modify your FDS entry at: %s\n" % (fds_url))
+    f.write("Source code is located at: %s\n" % (source_url))
+
 def write_rating(f, nstudents, totals, rating):
     # Make a shallow copy of the total, so we can modifiy it here.
     total_rating = Counter(totals)
@@ -49,7 +61,7 @@ def write_rating(f, nstudents, totals, rating):
     email = current_rating['email']
     del current_rating['name']
     del current_rating['email']
-    f.write("Result for %s: %s\n" % (name, email))
+    f.write("\nResult for %s: %s\n" % (name, email))
     # Give a simple score correcting for the name and email fields
     simple_score = (len(rating)-2) / len(total_rating)
     f.write("Simple rating: %4.1f%% Complete profile.\n" % (simple_score * 100))
@@ -74,8 +86,31 @@ def write_histogram(f, simple_score, totals, rating):
             f.write("%2d | %s\n" % (ii, score_hist[ii]*"="))
     return True
 
+def write_recommendations(f, rating):
+    f.write("\nRecommendations:\n")
+    f.write("You can update your information at: %s\n\n" % (fds_url))
+    f.write("They are the most commonly filled-in items,")
+    f.write(" and most appear on the physics directory page: %s\n" % (phy_url))
+    f.write("It is strongly encouraged that you complete them so we have a useful, professional directory.\n")
+    if not rating['Image']:
+        f.write('Image: This helps people recognize you and that this is your info.\n')
+    if not rating['Office Location']:
+        f.write('Office Location: Visitors may like to know where to find you.\n')
+    if not rating['Office Phone']:
+        f.write('Office Phone: You should have an office phone.\n')
+    if not rating['Research Description']:
+        f.write('Research Description: This is displayed directly below your primary info.\n')
+    if not rating['Recent Publications']:
+        f.write('Recent Publications: You should probably get on this....\n')
+    if not rating['Specialties']:
+        f.write('Specialties: This helps people identify if they need to contact you.\n')
+    if not rating['Web Page']:
+        f.write('Web Page: You can easially create a Duke webpage at: %s\n'% (duke_site_url))
+        f.write('          You can also create a webpage by dropping content in\n')
+        f.write('          your public_html folder after ssh-ing into: login.oit.duke.edu\n')
+        f.write('          it will appear at http://people.duke.edu/~netID/\n')
+
 if __name__ == "__main__":
-    base_url = 'http://fds.duke.edu/db/aas/Physics/grad'
     student_urls = get_students(base_url)
     nstudents = len(student_urls)
     # First loop through getting all the info for all students
@@ -95,6 +130,27 @@ if __name__ == "__main__":
         rating = get_rating(current_student)
         fname = rating['name'] + '.txt'
         f = open(fname, 'wb')
+        write_header(f)
         write_rating(f, nstudents, totals, rating)
         write_histogram(f, simple_score, totals, rating)
+        write_recommendations(f, rating)
         f.close()
+    # Send out the e-mails
+    sendyn = raw_input('E-mail results: [y/N]:')
+    if sendyn == 'y' or sendyn == 'yes':
+        print "Final pass. Sending email..."
+        (server, netid) = create_server()
+        sub = "FDS Page Ranking"
+        sender = '%s@duke.edu' % (netid)
+        #for current_student in student_urls:
+        #   rating = get_rating(current_student)
+        rating = get_rating(student_urls[10])
+        # Read the message
+        fname = rating['name'] + '.txt'
+        f = open(fname, 'rb')
+        msg = MIMEText(f.read())
+        f.close()
+        to = rating['email']
+        send_email(server, to, sender, sub, msg)
+        # Done, close the email server
+        close_server(server)
