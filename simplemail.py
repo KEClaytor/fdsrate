@@ -12,18 +12,22 @@ def create_server(netid=None, password=None):
     s.ehlo()
     # Get user info if it wasn't provided
     if not netid:
-        netid = input('NetID: ')
+        netid = raw_input('NetID: ')
     if not password:
-        password = input('Password: ')
+        password = raw_input('Password: ')
     # Next, log in to the server
     s.login(netid, password)
     return (s, netid)
 
 def send_email(server, send_to, send_from, subject, message):
+    msg = MIMEText(message)
+    msg['Subject'] = subject
+    msg['From'] = send_from
+    msg['To'] = send_to
     if not isinstance(send_to, list):
         send_to = [send_to]
     try:
-        server.sendmail(send_from, send_to, message.as_string())
+        server.sendmail(send_from, send_to, msg.as_string())
     except Exception,R:
         print R
 
@@ -32,9 +36,9 @@ def close_server(s):
 
 if __name__ == "__main__":
     (server, netid) = create_server()
-    to = input('Recipient: ')
-    sub = input('Subject: ')
-    msg = input('Message: ')
+    to = raw_input('Recipient: ')
+    sub = raw_input('Subject: ')
+    msg = raw_input('Message: ')
     me = '%s@duke.edu' % (netid)
     send_email(server, to, me, sub, msg)
-    close_server(s)
+    close_server(server)
