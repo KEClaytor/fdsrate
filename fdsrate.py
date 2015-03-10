@@ -10,12 +10,14 @@ def get_students(base_url):
     page = urllib2.urlopen(base_url)
     soup = BeautifulSoup(page.read())
     # Remove the header with sort by links
+    gradcontainer = soup.find('div', {'id':'contentSecond'})
     gradcontainer.h2.extract()
     # Find the links to the grad student pages
     grads = gradcontainer.findAll('a', href=True)
     return grads
 
 def get_rating(current_student):
+    print "Scraping info for: %s" % (current_student)
     student_page = urllib2.urlopen(current_student['href'])
     student_soup = BeautifulSoup(student_page.read())
     info = student_soup.find('div', {'id':'contentSecond'})
@@ -41,9 +43,12 @@ def send_result(nstudents, total_rating, rating):
     print "You have filled in:"
     for item in total_rating:
         print "  (%2.2fi\%) %s" % (total_rating[item]/nstudents, item)
+        # Remove the element as we go through it
+        del total_rating[item]
     print "You have neglected:"
     for item in total_rating:
-        print "  (%2.2fi\%) %s" % (total_rating[item]/nstudents, item)
+        print "  (%2.2f\%) %s" % (total_rating[item]/nstudents, item)
+    return True
 
 if __name__ == "__main__":
     base_url = 'http://fds.duke.edu/db/aas/Physics/grad'
