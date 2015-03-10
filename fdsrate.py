@@ -32,7 +32,7 @@ def get_rating(current_student):
     # Check for a picture
     img = info.findAll('img')
     if img:
-        self_fields['img'] = 1
+        self_fields['Image'] = 1
     # The b tag is associated with the information categories
     fields = info.findAll('b')
     for q in fields:
@@ -40,44 +40,31 @@ def get_rating(current_student):
         self_fields[key] = 1
     return self_fields
 
-def send_rating(nstudents, total_rating, rating):
-    print ""
-    print "Result for %s: %s" % (rating['name'], rating['email'])
-    print "Simple rating: %2.2f%%" % (len(rating) / len(total_rating))
-    print "You have filled in:"
-    for item in rating:
-        print "  (%2.2fi%%) %s" % (total_rating[item]/nstudents, item)
-        del total_rating[item]
-    print "You have neglected:"
-    for item in total_rating:
-        print "  (%2.2f%%) %s" % (total_rating[item]/nstudents, item)
-    return True
-def send_rating(nstudents, totals, rating):
+def write_rating(f, nstudents, totals, rating):
     # Make a shallow copy of the total, so we can modifiy it here.
     total_rating = Counter(totals)
-    print ""
-    print "Result for %s: %s" % (rating['name'], rating['email'])
+    f.write("Result for %s: %s\n" % (rating['name'], rating['email']))
     # Give a simple score correcting for the name and email fields
     simple_score = (len(rating)-2) / len(total_rating)
-    print "Simple rating: %4.1f%% Complete profile." % (simple_score * 100)
-    print "Shorthand: (Percent of grads with this field) Field"
-    print "You have filled in:"
+    f.write("Simple rating: %4.1f%% Complete profile." % (simple_score * 100))
+    f.write("Shorthand: (Percent of grads with this field) Field")
+    f.write("You have filled in:")
     for item in rating:
-        print "  (%4.1f%%) %s" % (total_rating[item] / nstudents * 100, item)
+        f.write("  (%4.1f%%) %s" % (total_rating[item] / nstudents * 100, item))
         del total_rating[item]
-    print "You have neglected:"
+    f.write("You have neglected:")
     for item in total_rating:
-        print "  (%4.1f%%) %s" % (total_rating[item] / nstudents * 100, item)
+        f.write("  (%4.1f%%) %s" % (total_rating[item] / nstudents * 100, item))
     return True
 
-def show_score_histogram(simple_score, totals, rating):
+def write_histogram(f, simple_score, totals, rating):
     score_hist = Counter(simple_score)
     short_score = len(rating) - 2
     for ii in range(len(totals)):
         if short_score == ii:
-            print "%2d | %s %s" % (ii, score_hist[ii]*"=", "<-- YOU")
+            f.write("%2d | %s %s\n" % (ii, score_hist[ii]*"=", "<-- YOU"))
         else:
-            print "%2d | %s" % (ii, score_hist[ii]*"=")
+            f.write("%2d | %s\n" % (ii, score_hist[ii]*"="))
     return True
 
 if __name__ == "__main__":
@@ -97,4 +84,8 @@ if __name__ == "__main__":
     # Now go back through the students and e-mail their results
     for current_student in student_urls:
         rating = get_rating(current_student)
-        send_rating(nstudents, totals, rating)
+        fname = rating['name'] + '.txt'
+        f = open(fname, 'wb')
+        write_rating(f, nstudents, totals, rating)
+        write_histogram(f, simple_score, totals, rating)
+        f.close()
