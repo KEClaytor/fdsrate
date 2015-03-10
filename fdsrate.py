@@ -1,7 +1,7 @@
 # Main FDS Rating script
+from __future__ import division
 from bs4 import BeautifulSoup
 from collections import Counter
-from __future__ import division
 import urllib2
 
 
@@ -43,23 +43,30 @@ def get_rating(current_student):
 def write_rating(f, nstudents, totals, rating):
     # Make a shallow copy of the total, so we can modifiy it here.
     total_rating = Counter(totals)
-    f.write("Result for %s: %s\n" % (rating['name'], rating['email']))
+    current_rating = Counter(rating)
+    # Get the name and then remove them from the current list
+    name = current_rating['name']
+    email = current_rating['email']
+    del current_rating['name']
+    del current_rating['email']
+    f.write("Result for %s: %s\n" % (name, email))
     # Give a simple score correcting for the name and email fields
     simple_score = (len(rating)-2) / len(total_rating)
-    f.write("Simple rating: %4.1f%% Complete profile." % (simple_score * 100))
-    f.write("Shorthand: (Percent of grads with this field) Field")
-    f.write("You have filled in:")
-    for item in rating:
-        f.write("  (%4.1f%%) %s" % (total_rating[item] / nstudents * 100, item))
+    f.write("Simple rating: %4.1f%% Complete profile.\n" % (simple_score * 100))
+    f.write("Shorthand: (Percent of grads with this field) Field\n")
+    f.write("You have filled in:\n")
+    for item in current_rating:
+        f.write("  (%4.1f%%) %s\n" % (total_rating[item] / nstudents * 100, item))
         del total_rating[item]
-    f.write("You have neglected:")
+    f.write("You have neglected:\n")
     for item in total_rating:
-        f.write("  (%4.1f%%) %s" % (total_rating[item] / nstudents * 100, item))
+        f.write("  (%4.1f%%) %s\n" % (total_rating[item] / nstudents * 100, item))
     return True
 
 def write_histogram(f, simple_score, totals, rating):
     score_hist = Counter(simple_score)
     short_score = len(rating) - 2
+    f.write("\nHistogram:\n")
     for ii in range(len(totals)):
         if short_score == ii:
             f.write("%2d | %s %s\n" % (ii, score_hist[ii]*"=", "<-- YOU"))
@@ -72,6 +79,7 @@ if __name__ == "__main__":
     student_urls = get_students(base_url)
     nstudents = len(student_urls)
     # First loop through getting all the info for all students
+    print "Beginning first pass to obtain statistics..."
     totals = Counter()
     simple_score = []
     for current_student in student_urls:
@@ -81,6 +89,7 @@ if __name__ == "__main__":
     # We don't need a giant string of emails or names
     del totals['email']
     del totals['name']
+    print "First Pass complete. Now generating user ratings..."
     # Now go back through the students and e-mail their results
     for current_student in student_urls:
         rating = get_rating(current_student)
