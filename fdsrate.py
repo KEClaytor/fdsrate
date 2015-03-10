@@ -1,6 +1,7 @@
 # Main FDS Rating script
 from bs4 import BeautifulSoup
 from collections import Counter
+from __future__ import division
 import urllib2
 
 
@@ -51,29 +52,48 @@ def send_rating(nstudents, total_rating, rating):
     for item in total_rating:
         print "  (%2.2f%%) %s" % (total_rating[item]/nstudents, item)
     return True
+def send_rating(nstudents, totals, rating):
+    # Make a shallow copy of the total, so we can modifiy it here.
+    total_rating = Counter(totals)
+    print ""
+    print "Result for %s: %s" % (rating['name'], rating['email'])
+    # Give a simple score correcting for the name and email fields
+    simple_score = (len(rating)-2) / len(total_rating)
+    print "Simple rating: %4.1f%% Complete profile." % (simple_score * 100)
+    print "Shorthand: (Percent of grads with this field) Field"
+    print "You have filled in:"
+    for item in rating:
+        print "  (%4.1f%%) %s" % (total_rating[item] / nstudents * 100, item)
+        del total_rating[item]
+    print "You have neglected:"
+    for item in total_rating:
+        print "  (%4.1f%%) %s" % (total_rating[item] / nstudents * 100, item)
+    return True
+
+def show_score_histogram(simple_score, totals, rating):
+    score_hist = Counter(simple_score)
+    short_score = len(rating) - 2
+    for ii in range(len(totals)):
+        if short_score == ii:
+            print "%2d | %s %s" % (ii, score_hist[ii]*"=", "<-- YOU")
+        else:
+            print "%2d | %s" % (ii, score_hist[ii]*"=")
+    return True
 
 if __name__ == "__main__":
-    #fname = 'fdsinfo.p'
-    #sys.setrecursionlimit(10000)
-    #try:
-    #    fds_file = open(fname, 'r')
-    #    pickle.load(fds_file)
-    #    print "Loading saved data..."
-    #except IOError:
-    # See if we have pickled data and load that, otherwise scrape
     base_url = 'http://fds.duke.edu/db/aas/Physics/grad'
     student_urls = get_students(base_url)
     nstudents = len(student_urls)
     # First loop through getting all the info for all students
-    totals = Counter({})
+    totals = Counter()
+    simple_score = []
     for current_student in student_urls:
         rating = get_rating(current_student)
         totals = totals + rating
-    #    fds_file = open(fname, 'wb')
-    #    pickle.dump(student_urls, fds_file)
-    #    pickle.dump(totals, fds_file)
-    #    pickle.dump(nstudents, fds_file)
-    #close(fds_file)
+        simple_score.append(len(rating) - 2)
+    # We don't need a giant string of emails or names
+    del totals['email']
+    del totals['name']
     # Now go back through the students and e-mail their results
     for current_student in student_urls:
         rating = get_rating(current_student)
