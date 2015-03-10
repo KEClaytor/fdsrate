@@ -21,7 +21,7 @@ def create_server(netid=None, password=None):
 
 def send_email(server, send_to, send_from, subject, message):
     msg = MIMEText(message)
-    msg['Subject'] = subject
+    msg['Subject'] = Header(subject, 'utf-8')
     msg['From'] = send_from
     msg['To'] = send_to
     if not isinstance(send_to, list):

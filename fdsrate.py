@@ -3,6 +3,7 @@ from __future__ import division
 from bs4 import BeautifulSoup
 from collections import Counter
 import urllib2
+import simplemail as sm
 
 base_url = 'http://fds.duke.edu/db/aas/Physics/grad'
 fds_url = 'http://fds.duke.edu/db'
@@ -139,7 +140,7 @@ if __name__ == "__main__":
     sendyn = raw_input('E-mail results: [y/N]:')
     if sendyn == 'y' or sendyn == 'yes':
         print "Final pass. Sending email..."
-        (server, netid) = create_server()
+        (server, netid) = sm.create_server()
         sub = "FDS Page Ranking"
         sender = '%s@duke.edu' % (netid)
         #for current_student in student_urls:
@@ -148,9 +149,9 @@ if __name__ == "__main__":
         # Read the message
         fname = rating['name'] + '.txt'
         f = open(fname, 'rb')
-        msg = MIMEText(f.read())
+        msg = MIMEText(f.read(), 'plain', 'utf-8')
         f.close()
         to = rating['email']
-        send_email(server, to, sender, sub, msg)
+        sm.end_email(server, to, sender, sub, msg)
         # Done, close the email server
-        close_server(server)
+        sm.close_server(server)
