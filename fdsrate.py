@@ -89,8 +89,8 @@ def write_histogram(f, simple_score, totals, rating):
 
 def write_recommendations(f, rating):
     f.write("\nRecommendations:\n")
-    f.write("You can update your information at: %s\n\n" % (fds_url))
-    f.write("They are the most commonly filled-in items,")
+    f.write("You can update your information at: %s\n" % (fds_url))
+    f.write("These are the most commonly filled-in items,")
     f.write(" and most appear on the physics directory page: %s\n" % (phy_url))
     f.write("It is strongly encouraged that you complete them so we have a useful, professional directory.\n")
     if not rating['Image']:
@@ -143,15 +143,17 @@ if __name__ == "__main__":
         (server, netid) = sm.create_server()
         sub = "FDS Page Ranking"
         sender = '%s@duke.edu' % (netid)
-        #for current_student in student_urls:
-        #   rating = get_rating(current_student)
-        rating = get_rating(student_urls[10])
-        # Read the message
-        fname = rating['name'] + '.txt'
-        f = open(fname, 'rb')
-        msg = MIMEText(f.read(), 'plain', 'utf-8')
-        f.close()
-        to = rating['email']
-        sm.end_email(server, to, sender, sub, msg)
+        # For testing purposes, single out my entry
+        #rating = get_rating(student_urls[9])
+        # Run through all students e-mailing them
+        for current_student in student_urls:
+            rating = get_rating(current_student)
+            # Read the message
+            fname = rating['name'] + '.txt'
+            f = open(fname, 'rb')
+            msg = f.read()
+            f.close()
+            to = rating['email']
+            sm.send_email(server, to, sender, sub, msg)
         # Done, close the email server
         sm.close_server(server)

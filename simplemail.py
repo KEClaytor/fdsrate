@@ -1,6 +1,7 @@
 # A simple e-mail wrapper
 import smtplib
 from email.mime.text import MIMEText
+from getpass import getpass
 
 
 def create_server(netid=None, password=None):
@@ -14,14 +15,14 @@ def create_server(netid=None, password=None):
     if not netid:
         netid = raw_input('NetID: ')
     if not password:
-        password = raw_input('Password: ')
+        password = getpass()
     # Next, log in to the server
     s.login(netid, password)
     return (s, netid)
 
 def send_email(server, send_to, send_from, subject, message):
-    msg = MIMEText(message)
-    msg['Subject'] = Header(subject, 'utf-8')
+    msg = MIMEText(message, 'plain', 'utf-8')
+    msg['Subject'] = subject
     msg['From'] = send_from
     msg['To'] = send_to
     if not isinstance(send_to, list):
